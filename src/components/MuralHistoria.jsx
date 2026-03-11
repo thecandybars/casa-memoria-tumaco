@@ -31,7 +31,7 @@ export default function MuralHistoria() {
         left: "50%",
       },
       zoom: {
-        amount: 4,
+        amount: 3,
         top: "45%",
         left: "50%",
       },
@@ -46,12 +46,14 @@ export default function MuralHistoria() {
       id: "pueblo",
       titulo: "El pueblo Awá",
       button: {
-        top: "60%",
+        top: "70%",
         left: "48%",
+        // top: "60%",
+        // left: "48%",
       },
       zoom: {
         amount: 4,
-        top: "60%",
+        top: "50%",
         left: "68%",
       },
       textBox: {
@@ -65,11 +67,11 @@ export default function MuralHistoria() {
       id: "bandera",
       titulo: "Organización de la Unidad Indígena del Pueblo Awá",
       button: {
-        top: "57%",
-        left: "32%",
+        top: "67%",
+        left: "30%",
       },
       zoom: {
-        amount: 4,
+        amount: 3,
         top: "77%",
         left: "32%",
       },
@@ -84,8 +86,8 @@ export default function MuralHistoria() {
       id: "piedra",
       titulo: "El Arco del Morro",
       button: {
-        top: "40%",
-        left: "34%",
+        top: "50%",
+        left: "36%",
       },
       zoom: {
         amount: 4,
@@ -107,7 +109,7 @@ export default function MuralHistoria() {
         left: "37%",
       },
       zoom: {
-        amount: 2,
+        amount: 6,
         top: "5%",
         left: "80%",
       },
@@ -128,6 +130,7 @@ export default function MuralHistoria() {
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
+        padding: 0,
       }}
     >
       <InteractiveImage

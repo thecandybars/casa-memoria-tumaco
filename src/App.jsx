@@ -1,8 +1,12 @@
-import "./App.css";
+import { Box } from "@mui/material";
 import MuralHistoria from "./components/MuralHistoria";
 
 function App() {
-  return <MuralHistoria />;
+  return (
+    <Box>
+      <MuralHistoria />
+    </Box>
+  );
 }
 
 export default App;

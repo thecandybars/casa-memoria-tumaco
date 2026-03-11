@@ -1,101 +1,85 @@
 import PropTypes from "prop-types";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Box,
   Button,
+  Dialog,
   Fade,
   Slide,
   Stack,
   Tooltip,
   Typography,
-  Zoom,
 } from "@mui/material";
-import { CancelIcon, InfoOutlinedIcon, AddCircleOutlineIcon } from "./icons";
+import { AddCircleOutlineIcon, ArrowBackIosNewOutlinedIcon } from "./icons";
 
 export default function InteractiveImage({
   src,
   hotspots = [],
-  mainInfo = null,
+  // mainInfo = null,
 }) {
   const [instance, setInstance] = useState(null);
-  console.log("🚀 ~ instance:", instance);
-
-  const [showText, setShowText] = useState({ visible: false, textBox: null });
+  const [loaded, setLoaded] = useState(false);
+  const [showText, setShowText] = useState({
+    visible: false,
+    textBox: null,
+    titulo: "",
+  });
   const [showMainInfo, setShowMainInfo] = useState(true);
-  const [initialImageWidth, setInitialImageWidth] = useState(null);
-  const [scaledWidth, setScaledWidth] = useState(null);
 
-  const imageRef = useRef(null);
+  const stageRef = useRef(null);
 
+  // Cierra el hotspot activo y resetea el transform para recentrar la imagen.
+  const closeHotspot = useCallback(() => {
+    if (!showText.visible) return;
+
+    setShowText({ visible: false, textBox: null, titulo: "" });
+    instance?.resetTransform(300);
+  }, [instance, showText.visible]);
+
+  // Permite cerrar el hotspot con Escape.
   useEffect(() => {
-    const calculateInitialWidth = () => {
-      if (imageRef.current) {
-        const width = imageRef.current.clientWidth;
-        setInitialImageWidth(width);
-        setScaledWidth(width); // Set initial scaled width
+    const handleKeydown = (event) => {
+      if (event.key === "Escape") {
+        closeHotspot();
       }
     };
 
-    if (imageRef.current?.complete) {
-      calculateInitialWidth();
-    } else {
-      imageRef.current?.addEventListener("load", calculateInitialWidth);
-    }
+    window.addEventListener("keydown", handleKeydown);
+    return () => window.removeEventListener("keydown", handleKeydown);
+  }, [closeHotspot]);
 
-    window.addEventListener("resize", calculateInitialWidth);
+  // Cuando cambia el tamaño de la ventana, resetea el transform.
+  // Esto ayuda a mantener centrada la imagen y evita desajustes responsivos.
+  useEffect(() => {
+    if (!instance) return;
 
-    return () => {
-      window.removeEventListener("resize", calculateInitialWidth);
-      imageRef.current?.removeEventListener("load", calculateInitialWidth);
+    let resizeTimeout;
+
+    const handleResize = () => {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(() => {
+        instance.resetTransform(0);
+      }, 100);
     };
-  }, []);
 
-  const handleTransform = (context) => {
-    const scale = context.state.scale;
-    console.log("🚀 ~ handleTransform ~ scale:", scale);
-
-    // Dynamically update the width of the container based on the zoom scale
-    if (initialImageWidth) {
-      setScaledWidth(initialImageWidth * scale);
-    }
-  };
-
-  // Esto queda comentado para continuar desarrollando. La idea es hacer zoom no al hotspot sino a un elemento invisible en otra posicion
-  // La idea es para implementar el zoom que alarga la imagen, sobre todo para imagenes verticales
-  // const renderHotspotZoomElement = hotspots.map((hotspot) => (
-  //   <div
-  //     key={hotspot.id}
-  //     id={`zoom-${hotspot.id}`}
-  //     style={{
-  //       position: "absolute",
-  //       top: hotspot.zoom.top,
-  //       left: hotspot.zoom.left,
-  //       width: "40px",
-  //       height: "40px",
-  //       borderRadius: "50%",
-  //       cursor: "pointer",
-  //       transform: "translate(-50%, -50%)",
-  //       backgroundColor: "red",
-  //       border: "1px solid red",
-  //     }}
-  //   >
-  //     {hotspot.id}
-  //   </div>
-  // ));
+    window.addEventListener("resize", handleResize);
+    return () => {
+      clearTimeout(resizeTimeout);
+      window.removeEventListener("resize", handleResize);
+    };
+  }, [instance]);
 
   const renderHotspots = hotspots.map((hotspot) => (
     <Box
       key={hotspot.id}
-      onClick={() => {
-        if (instance) {
-          // instance.zoomToElement(
-          //   `zoom-${hotspot.id}`,
-          //   hotspot.zoom.amount || 3.5,
-          //   1000
-          // );
-          instance.zoomToElement(hotspot.id, hotspot.zoom.amount || 3.5, 1000);
+      id={hotspot.id}
+      onClick={(e) => {
+        e.stopPropagation();
 
+        // Hace zoom programático al hotspot seleccionado y abre su texto.
+        if (instance) {
+          instance.zoomToElement(hotspot.id, hotspot.zoom.amount || 3.5, 1000);
           setShowText({
             visible: true,
             textBox: { ...hotspot.textBox },
@@ -103,160 +87,289 @@ export default function InteractiveImage({
           });
         }
       }}
-      id={hotspot.id}
       sx={{
         position: "absolute",
         top: hotspot.button.top,
         left: hotspot.button.left,
-        width: "40px",
-        height: "40px",
+        width: 40,
+        height: 40,
         borderRadius: "50%",
         cursor: "pointer",
         transform: "translate(-50%, -50%)",
-        backgroundColor: "secondary.main",
+        bgcolor: "#000000aa",
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
         zIndex: 100,
       }}
     >
-      <Tooltip title={!showText.visible && hotspot.titulo}>
-        <AddCircleOutlineIcon color="primary" size="large" />
+      <Tooltip title={!showText.visible ? hotspot.titulo : ""}>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <AddCircleOutlineIcon sx={{ color: "white" }} size="large" />
+        </Box>
       </Tooltip>
     </Box>
   ));
 
-  const renderMainInfo = (
-    <Fade in={!showText.visible} timeout={800}>
-      <Box
-        display="flex"
-        sx={{
-          position: "absolute",
-          alignItems: "flex-end",
-          gap: 1,
-          bottom: 20,
-          left: 20,
-          zIndex: 10,
-          pointerEvents: "none",
-        }}
-      >
-        <Box
-          onClick={() => setShowMainInfo(!showMainInfo)}
-          sx={{
-            width: "40px",
-            height: "40px",
-            borderRadius: "50%",
-            cursor: "pointer",
-            backgroundColor: "black",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            pointerEvents: "all",
-          }}
-        >
-          {showMainInfo ? (
-            <CancelIcon size="large" color="primary" />
-          ) : (
-            <InfoOutlinedIcon size="large" color="primary" />
-          )}
-        </Box>
-        <Slide in={showMainInfo} timeout={200} direction="up">
-          <Stack
-            gap={1}
-            sx={{
-              bgcolor: "rgba(0,0,0,0.8)",
-              p: 1,
-              width: "60%",
-            }}
-          >
-            <Typography variant="h6">{mainInfo && mainInfo.title}</Typography>
-            <Typography variant="body">
-              {mainInfo && mainInfo.content}
-            </Typography>
-          </Stack>
-        </Slide>
-      </Box>
-    </Fade>
-  );
-
   const renderDialogZoomed = showText.textBox && (
-    <Zoom
-      in={showText.visible}
-      style={{
-        transitionDelay: showText.visible ? "800ms" : "0ms",
-      }}
-    >
+    <Slide in={showText.visible} timeout={500} direction="up">
       <Stack
         gap={1}
+        alignItems="flex-start"
         sx={{
           position: "absolute",
-          top: showText.textBox.top || "50%",
-          left: showText.textBox.left || "50%",
-          backgroundColor: "black",
+          bottom: 0,
+          left: 0,
+          backgroundColor: "#000000aa",
+          backdropFilter: "blur(16px)",
+          WebkitBackdropFilter: "blur(16px)",
           padding: "10px",
-          width: "40%",
-          borderRadius: "8px",
+          width: "100%",
           zIndex: 1000,
           color: "white",
+          textAlign: "left",
         }}
       >
-        <Typography variant="h4"> {showText.titulo}</Typography>
-        <Typography variant="body"> {showText.textBox.content}</Typography>
-        <Button
-          onClick={() => {
-            setShowText({ visible: false, textBox: null, titulo: "" });
-            instance.resetTransform(500);
-          }}
-        >
-          Cerrar
-        </Button>
+        <Typography sx={{ fontSize: "20px", fontWeight: "bold" }}>
+          {showText.titulo}
+        </Typography>
+        <Typography sx={{ fontSize: "12px" }}>
+          {showText.textBox.content}
+        </Typography>
       </Stack>
-    </Zoom>
+    </Slide>
   );
 
   return (
-    <div style={{ position: "relative", width: "auto" }}>
+    <Box
+      ref={stageRef}
+      sx={{
+        // Stage principal: ocupa toda la pantalla y recorta cualquier overflow.
+        position: "relative",
+        width: "100%",
+        height: "100vh",
+        overflow: "hidden",
+        backgroundColor: "black",
+      }}
+    >
       <TransformWrapper
         initialScale={1}
         minScale={0.5}
         maxScale={10}
         centerOnInit
-        onInit={(e) => setInstance(e)}
-        onTransformed={handleTransform}
+        onInit={(wrapper) => setInstance(wrapper)}
         wheel={{ disabled: true }}
         panning={{ disabled: true }}
         pinch={{ disabled: true }}
         doubleClick={{ disabled: true }}
       >
         {() => (
-          <TransformComponent>
-            <div
-              style={{
-                transformOrigin: "center", // Ensure scaling happens from the center
-                display: "inline-block",
+          <TransformComponent
+            wrapperStyle={{
+              width: "100%",
+              height: "100%",
+            }}
+            contentStyle={{
+              // Este contenedor centra visualmente la imagen dentro del viewport.
+              width: "100%",
+              height: "100%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Box
+              onClick={closeHotspot}
+              sx={{
+                // El padre relativo compartido entre imagen y hotspots:
+                // esto garantiza que los hotspots queden alineados con la imagen.
+                position: "relative",
+                display: loaded ? "inline-block" : "none",
+                lineHeight: 0,
+                maxWidth: "100%",
+                maxHeight: "100%",
               }}
             >
-              <img
-                ref={imageRef}
+              <Box
+                component="img"
                 src={src}
                 alt="Zoomable"
-                style={{
-                  width: scaledWidth,
-                  height: "100vh",
-                  objectFit: "cover",
+                onLoad={() => {
+                  setLoaded(true);
+
+                  // Una vez cargada la imagen, forzamos un reset para asegurar
+                  // centrado correcto según el tamaño real ya renderizado.
+                  requestAnimationFrame(() => {
+                    instance?.resetTransform(0);
+                  });
+                }}
+                sx={{
+                  // La imagen se adapta al viewport sin desbordarse.
+                  // La responsividad depende de CSS, no de cálculos manuales de width.
+                  display: "block",
+                  maxWidth: "100vw",
+                  maxHeight: "100vh",
+                  width: "auto",
+                  height: "auto",
+                  objectFit: "contain",
+                  userSelect: "none",
+                  WebkitUserDrag: "none",
                 }}
               />
-              <Fade in={!showText.visible} timeout={100}>
-                <div>{renderHotspots}</div>
+
+              {/* Los hotspots solo se muestran cuando no hay uno abierto.
+                  Permanecen alineados porque viven dentro del mismo contenedor transformado. */}
+              <Fade in={!showText.visible && loaded} timeout={100}>
+                <Box>{renderHotspots}</Box>
               </Fade>
-              {/* {renderHotspotZoomElement} */}
-            </div>
+            </Box>
           </TransformComponent>
         )}
       </TransformWrapper>
+
       {renderDialogZoomed}
-      {renderMainInfo}
-    </div>
+
+      <Box
+        sx={{
+          position: "absolute",
+          zIndex: 10,
+          top: 20,
+          left: showText.visible ? 20 : 0,
+          visibility: showText.visible ? "visible" : "hidden",
+          opacity: showText.visible ? 1 : 0,
+          transition: "all 0.5s ease-in-out",
+        }}
+      >
+        <Button
+          sx={{
+            borderRadius: "100%",
+            width: "52px",
+            aspectRatio: "1",
+            bgcolor: "rgba(0,0,0,0.7)",
+          }}
+          onClick={closeHotspot}
+        >
+          <ArrowBackIosNewOutlinedIcon
+            sx={{ fontSize: "18px", color: "white" }}
+          />
+        </Button>
+      </Box>
+
+      <Box
+        sx={{
+          position: "absolute",
+          zIndex: 10,
+          top: 20,
+          right: 20,
+        }}
+      >
+        <Button
+          variant="text"
+          sx={{
+            borderRadius: "100%",
+            width: "52px",
+            aspectRatio: "1",
+            bgcolor: "rgba(0,0,0,0.5)",
+            textTransform: "none",
+          }}
+          onClick={() => setShowMainInfo(true)}
+        >
+          <Typography
+            sx={{
+              fontSize: "24px",
+              color: "white",
+              border: "1px solid white",
+              borderRadius: "100%",
+              padding: 3,
+              width: "20px",
+              height: "20px",
+              aspectRatio: "1",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            ?
+          </Typography>
+        </Button>
+      </Box>
+
+      <Dialog
+        open={showMainInfo}
+        fullScreen
+        onClose={() => setShowMainInfo(false)}
+        sx={{
+          "& .MuiDialog-paper": {
+            bgcolor: "rgba(0,0,0,0.5)",
+            backdropFilter: "blur(10px)",
+            WebkitBackdropFilter: "blur(10px)",
+          },
+        }}
+      >
+        <Stack
+          direction="row"
+          gap={12}
+          mx={40}
+          sx={{
+            height: 1,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "white",
+          }}
+        >
+          <img src="/help.svg" alt="help" />
+          <Stack gap={2}>
+            <Typography
+              sx={{
+                fontSize: "32px",
+                fontFamily: "Nunito",
+              }}
+            >
+              RECORRE EL MURAL INTERACTIVO
+            </Typography>
+            <Typography
+              sx={{
+                fontSize: "16px",
+                fontFamily: "Nunito",
+              }}
+            >
+              Haz clic en los puntos de información para conocer la historia y
+              los detalles de cada sección. Navega a tu ritmo y explora
+              libremente.
+            </Typography>
+            <Button
+              variant="outlined"
+              onClick={() => setShowMainInfo(false)}
+              sx={{
+                textTransform: "none",
+                color: "white",
+                border: "1px solid white",
+                borderRadius: "50px",
+                width: "200px",
+                alignSelf: "center",
+                mt: 3,
+              }}
+            >
+              <Typography
+                sx={{
+                  fontSize: "16px",
+                  fontFamily: "Nunito",
+                }}
+              >
+                Continuar
+              </Typography>
+            </Button>
+          </Stack>
+        </Stack>
+      </Dialog>
+    </Box>
   );
 }
 
