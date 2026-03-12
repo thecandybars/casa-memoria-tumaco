@@ -13,6 +13,18 @@ import {
 } from "@mui/material";
 import { AddCircleOutlineIcon, ArrowBackIosNewOutlinedIcon } from "./icons";
 
+const buttonProps = {
+  transition: "all 0.2s ease-in-out",
+
+  "&:hover": {
+    bgcolor: "rgb(111,201,195)",
+    transform: "scale(1.1)",
+  },
+  "&:active": {
+    border: "1px solid white",
+  },
+};
+
 export default function InteractiveImage({
   src,
   hotspots = [],
@@ -74,50 +86,124 @@ export default function InteractiveImage({
     <Box
       key={hotspot.id}
       id={hotspot.id}
-      onClick={(e) => {
-        e.stopPropagation();
-
-        // Hace zoom programático al hotspot seleccionado y abre su texto.
-        if (instance) {
-          instance.zoomToElement(hotspot.id, hotspot.zoom.amount || 3.5, 1000);
-          setShowText({
-            visible: true,
-            textBox: { ...hotspot.textBox },
-            titulo: hotspot.titulo,
-          });
-        }
-      }}
       sx={{
         position: "absolute",
         top: hotspot.button.top,
         left: hotspot.button.left,
-        width: 40,
-        height: 40,
-        borderRadius: "50%",
-        cursor: "pointer",
         transform: "translate(-50%, -50%)",
-        bgcolor: "#000000aa",
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
         zIndex: 100,
       }}
     >
-      <Tooltip title={!showText.visible ? hotspot.titulo : ""}>
-        <Box
+      <Tooltip
+        title={!showText.visible ? hotspot.titulo : ""}
+        arrow
+        slotProps={{
+          tooltip: {
+            sx: {
+              p: 2,
+              bgcolor: "rgba(0, 0, 0, 0.8)",
+              color: "white",
+              fontSize: "14px",
+              borderRadius: "4px",
+            },
+          },
+          arrow: {
+            sx: {
+              color: "rgba(0, 0, 0, 0.8)",
+            },
+          },
+        }}
+      >
+        <Button
+          variant="text"
           sx={{
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
+            color: "white",
+            width: 40,
+            height: 40,
+            minWidth: 40,
+            minHeight: 40,
+            borderRadius: "100%",
+            bgcolor: "#000000aa",
+            fontSize: "18px",
+            ...buttonProps,
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            // Hace zoom programático al hotspot seleccionado y abre su texto.
+            if (instance) {
+              instance.zoomToElement(
+                hotspot.id,
+                hotspot.zoom.amount || 3.5,
+                1000,
+              );
+              setShowText({
+                visible: true,
+                textBox: { ...hotspot.textBox },
+                titulo: hotspot.titulo,
+              });
+            }
           }}
         >
-          <AddCircleOutlineIcon sx={{ color: "white" }} size="large" />
-        </Box>
+          <Typography sx={{ fontSize: "inherit" }}>+</Typography>
+        </Button>
       </Tooltip>
     </Box>
   ));
+  // const renderHotspots = hotspots.map((hotspot) => (
+  //   <Box
+  //     key={hotspot.id}
+  //     id={hotspot.id}
+  //     onClick={(e) => {
+  //       e.stopPropagation();
+  //       // Hace zoom programático al hotspot seleccionado y abre su texto.
+  //       if (instance) {
+  //         instance.zoomToElement(hotspot.id, hotspot.zoom.amount || 3.5, 1000);
+  //         setShowText({
+  //           visible: true,
+  //           textBox: { ...hotspot.textBox },
+  //           titulo: hotspot.titulo,
+  //         });
+  //       }
+  //     }}
+  //     sx={{
+  //       position: "absolute",
+  //       top: hotspot.button.top,
+  //       left: hotspot.button.left,
+  //       width: 40,
+  //       height: 40,
+  //       borderRadius: "50%",
+  //       cursor: "pointer",
+  //       transform: "translate(-50%, -50%)",
+  //       bgcolor: "#000000aa",
+  //       display: "flex",
+  //       justifyContent: "center",
+  //       alignItems: "center",
+  //       zIndex: 100,
+  //     }}
+  //   >
+  //     <Tooltip title={!showText.visible ? hotspot.titulo : ""}>
+  //       <Button
+  //         variant="text"
+  //         sx={{
+  //           display: "flex",
+  //           alignItems: "center",
+  //           justifyContent: "center",
+  //           color: "white",
+  //         }}
+  //       >
+  //         <Typography sx={{ fontSize: "18px" }}>+</Typography>
+  //       </Button>
+  //     </Tooltip>
+  //   </Box>
+  // ));
 
-  const renderDialogZoomed = showText.textBox && (
+  const renderFooterInfo = showText.textBox && (
     <Slide in={showText.visible} timeout={500} direction="up">
       <Stack
         gap={1}
@@ -139,7 +225,7 @@ export default function InteractiveImage({
         <Typography sx={{ fontSize: "20px", fontWeight: "bold" }}>
           {showText.titulo}
         </Typography>
-        <Typography sx={{ fontSize: "12px" }}>
+        <Typography sx={{ fontSize: "14px", width: 0.7 }}>
           {showText.textBox.content}
         </Typography>
       </Stack>
@@ -233,7 +319,7 @@ export default function InteractiveImage({
         )}
       </TransformWrapper>
 
-      {renderDialogZoomed}
+      {renderFooterInfo}
 
       <Box
         sx={{
@@ -252,6 +338,7 @@ export default function InteractiveImage({
             width: "52px",
             aspectRatio: "1",
             bgcolor: "rgba(0,0,0,0.7)",
+            ...buttonProps,
           }}
           onClick={closeHotspot}
         >
@@ -277,6 +364,7 @@ export default function InteractiveImage({
             aspectRatio: "1",
             bgcolor: "rgba(0,0,0,0.5)",
             textTransform: "none",
+            ...buttonProps,
           }}
           onClick={() => setShowMainInfo(true)}
         >
@@ -355,6 +443,7 @@ export default function InteractiveImage({
                 width: "200px",
                 alignSelf: "center",
                 mt: 3,
+                ...buttonProps,
               }}
             >
               <Typography
