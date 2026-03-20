@@ -17,7 +17,7 @@ const buttonProps = {
   transition: "all 0.2s ease-in-out",
 
   "&:hover": {
-    bgcolor: "rgb(111,201,195)",
+    bgcolor: "#20555b",
     transform: "scale(1.1)",
   },
   "&:active": {
@@ -215,17 +215,19 @@ export default function InteractiveImage({
           backgroundColor: "#000000aa",
           backdropFilter: "blur(16px)",
           WebkitBackdropFilter: "blur(16px)",
-          padding: "10px",
+          padding: "40px",
           width: "100%",
           zIndex: 1000,
           color: "white",
           textAlign: "left",
         }}
       >
-        <Typography sx={{ fontSize: "20px", fontWeight: "bold" }}>
+        <Typography
+          sx={{ fontSize: "24px", fontWeight: "bold", fontFamily: "Nunito" }}
+        >
           {showText.titulo}
         </Typography>
-        <Typography sx={{ fontSize: "14px", width: 0.7 }}>
+        <Typography sx={{ fontSize: "16px", width: 0.7, fontFamily: "Nunito" }}>
           {showText.textBox.content}
         </Typography>
       </Stack>
@@ -326,7 +328,7 @@ export default function InteractiveImage({
           position: "absolute",
           zIndex: 10,
           top: 20,
-          left: showText.visible ? 20 : 0,
+          left: showText.visible ? 40 : 0,
           visibility: showText.visible ? "visible" : "hidden",
           opacity: showText.visible ? 1 : 0,
           transition: "all 0.5s ease-in-out",
@@ -353,7 +355,7 @@ export default function InteractiveImage({
           position: "absolute",
           zIndex: 10,
           top: 20,
-          right: 20,
+          right: 40,
         }}
       >
         <Button
